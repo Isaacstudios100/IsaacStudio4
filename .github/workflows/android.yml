@@ -68,6 +68,30 @@ jobs:
           test -f app/src/main/assets/third-party-licenses/opus-COPYING.txt
           test -f app/src/main/assets/third-party-licenses/opusfile-COPYING.txt
 
+      - name: Diagnose Ninja regeneration
+        working-directory: source
+        shell: bash
+        run: |
+          set -uo pipefail
+          gradle ':app:configureCMakeDebug[arm64-v8a]'
+          NINJA="$ANDROID_HOME/ndk/26.1.10909125/prebuilt/linux-x86_64/bin/ninja"
+          BUILD_FILE="$(find app/.cxx -name build.ninja -print -quit)"
+          if [ -z "$BUILD_FILE" ] || [ ! -x "$NINJA" ]; then
+            echo "DIAGNOSTIC STOP: build.ninja or NDK Ninja executable not found"
+            find app/.cxx -maxdepth 5 -type f -name build.ninja -print || true
+            exit 1
+          fi
+          BUILD_DIR="$(dirname "$BUILD_FILE")"
+          echo "=== BUILD DIRECTORY ==="
+          echo "$BUILD_DIR"
+          echo "=== RELEVANT FILE TIMESTAMPS ==="
+          for f in "$BUILD_DIR/build.ninja" "$BUILD_DIR/CMakeCache.txt" "$BUILD_DIR/CMakeFiles/VerifyGlobs.cmake" "$BUILD_DIR/CMakeFiles/cmake.check_cache"; do
+            if [ -f "$f" ]; then stat -c '%y %n' "$f"; fi
+          done
+          echo "=== NINJA REGENERATION EXPLANATION ==="
+          "$NINJA" -C "$BUILD_DIR" -d explain -n 2>&1 | tee "$RUNNER_TEMP/ninja-explain.log" || true
+          echo "=== END DIAGNOSTIC ==="
+
       - name: Build debug APK
         working-directory: source
         run: gradle assembleDebug
