@@ -68,6 +68,14 @@ jobs:
           test -f app/src/main/assets/third-party-licenses/opus-COPYING.txt
           test -f app/src/main/assets/third-party-licenses/opusfile-COPYING.txt
 
+      - name: Normalize extracted source timestamps
+        working-directory: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Normalizing source and directory timestamps to runner time"
+          find . -exec touch {} +
+
       - name: Diagnose Ninja regeneration
         working-directory: source
         shell: bash
