@@ -24,7 +24,7 @@ jobs:
         uses: android-actions/setup-android@v4
 
       - name: Install Android SDK 35
-        run: sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools"
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools" "ndk;26.1.10909125" "cmake;3.22.1"
 
       - name: Set up Gradle 8.7
         uses: gradle/actions/setup-gradle@v4
@@ -33,6 +33,40 @@ jobs:
 
       - name: Extract Android project
         run: unzip IsaacStudio4-source.zip -d source
+      - name: Fetch pinned Xiph decoder sources
+        working-directory: source
+        run: |
+          set -euo pipefail
+          mkdir -p app/src/main/cpp/third_party
+          mkdir -p app/src/main/assets/third-party-licenses
+
+          curl -fL --retry 3 -o "$RUNNER_TEMP/libogg-1.3.6.tar.gz" \
+            https://downloads.xiph.org/releases/ogg/libogg-1.3.6.tar.gz
+          echo "83e6704730683d004d20e21b8f7f55dcb3383cdf84c0daedf30bde175f774638  $RUNNER_TEMP/libogg-1.3.6.tar.gz" | sha256sum --check
+          tar -xzf "$RUNNER_TEMP/libogg-1.3.6.tar.gz" -C "$RUNNER_TEMP"
+          mv "$RUNNER_TEMP/libogg-1.3.6" app/src/main/cpp/third_party/ogg
+          cp app/src/main/cpp/third_party/ogg/COPYING app/src/main/assets/third-party-licenses/libogg-COPYING.txt
+
+          curl -fL --retry 3 -o "$RUNNER_TEMP/opus-1.5.2.tar.gz" \
+            https://downloads.xiph.org/releases/opus/opus-1.5.2.tar.gz
+          echo "65c1d2f78b9f2fb20082c38cbe47c951ad5839345876e46941612ee87f9a7ce1  $RUNNER_TEMP/opus-1.5.2.tar.gz" | sha256sum --check
+          tar -xzf "$RUNNER_TEMP/opus-1.5.2.tar.gz" -C "$RUNNER_TEMP"
+          mv "$RUNNER_TEMP/opus-1.5.2" app/src/main/cpp/third_party/opus
+          cp app/src/main/cpp/third_party/opus/COPYING app/src/main/assets/third-party-licenses/opus-COPYING.txt
+
+          curl -fL --retry 3 -o "$RUNNER_TEMP/opusfile-0.12.tar.gz" \
+            https://downloads.xiph.org/releases/opus/opusfile-0.12.tar.gz
+          echo "118d8601c12dd6a44f52423e68ca9083cc9f2bfe72da7a8c1acb22a80ae3550b  $RUNNER_TEMP/opusfile-0.12.tar.gz" | sha256sum --check
+          tar -xzf "$RUNNER_TEMP/opusfile-0.12.tar.gz" -C "$RUNNER_TEMP"
+          mv "$RUNNER_TEMP/opusfile-0.12" app/src/main/cpp/third_party/opusfile
+          cp app/src/main/cpp/third_party/opusfile/COPYING app/src/main/assets/third-party-licenses/opusfile-COPYING.txt
+
+          test -f app/src/main/cpp/third_party/ogg/src/framing.c
+          test -f app/src/main/cpp/third_party/opus/CMakeLists.txt
+          test -f app/src/main/cpp/third_party/opusfile/src/opusfile.c
+          test -f app/src/main/assets/third-party-licenses/libogg-COPYING.txt
+          test -f app/src/main/assets/third-party-licenses/opus-COPYING.txt
+          test -f app/src/main/assets/third-party-licenses/opusfile-COPYING.txt
 
       - name: Build debug APK
         working-directory: source
