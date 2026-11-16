@@ -74,7 +74,7 @@ jobs:
         run: |
           set -uo pipefail
           gradle ':app:configureCMakeDebug[arm64-v8a]'
-          NINJA="$ANDROID_HOME/ndk/26.1.10909125/prebuilt/linux-x86_64/bin/ninja"
+          NINJA="$ANDROID_HOME/cmake/3.22.1/bin/ninja"
           BUILD_FILE="$(find app/.cxx -name build.ninja -print -quit)"
           if [ -z "$BUILD_FILE" ] || [ ! -x "$NINJA" ]; then
             echo "DIAGNOSTIC STOP: build.ninja or NDK Ninja executable not found"
